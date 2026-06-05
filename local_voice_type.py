@@ -84,10 +84,21 @@ def apply_replacements(text):
         text = text.replace(wrong, correct)
     return text
 
+
+def play_sound(path):
+    """効果音を非同期で鳴らす（合図用。メニューバーが出ない環境の代替）。"""
+    if SOUND_FEEDBACK:
+        subprocess.Popen(["afplay", path])
+
 # メニューバー表示
 ICON_IDLE = "🎤"
 ICON_RECORDING = "🔴"
 ICON_PROCESSING = "⏳"
+
+# 効果音（メニューバーアイコンの代わりの合図）。Falseで無効化できる。
+SOUND_FEEDBACK = True
+SOUND_START = "/System/Library/Sounds/Tink.aiff"   # 録音開始の合図
+SOUND_DONE = "/System/Library/Sounds/Pop.aiff"     # 挿入完了の合図
 
 
 class VoiceTyper(rumps.App):
@@ -135,6 +146,7 @@ class VoiceTyper(rumps.App):
         self.recording = True
         self._frames = []
         self.title = ICON_RECORDING
+        play_sound(SOUND_START)
         self._stream = sd.InputStream(
             samplerate=SAMPLE_RATE,
             channels=1,
@@ -155,6 +167,8 @@ class VoiceTyper(rumps.App):
             return
 
         audio = np.concatenate(self._frames, axis=0).flatten()
+        peak = float(np.abs(audio).max()) if len(audio) else 0.0
+        print(f"[rec] {len(audio) / SAMPLE_RATE:.1f}s peak={peak:.4f}", flush=True)
         if len(audio) / SAMPLE_RATE < MIN_DURATION:
             self.title = ICON_IDLE   # タップ誤爆は無視
             return
@@ -176,10 +190,12 @@ class VoiceTyper(rumps.App):
                 initial_prompt=INITIAL_PROMPT,
             )
             text = apply_replacements(result["text"].strip())
+            print(f"[stt] {text!r}", flush=True)
             if text:
                 self._insert_text(text)
+                play_sound(SOUND_DONE)
         except Exception as e:
-            print(f"[transcribe] 失敗: {e}")
+            print(f"[transcribe] 失敗: {e}", flush=True)
         finally:
             self.title = ICON_IDLE
 
@@ -197,4 +213,11 @@ class VoiceTyper(rumps.App):
 
 
 if __name__ == "__main__":
-    VoiceTyper().run()
+    try:
+        print("[main] starting VoiceTyper", flush=True)
+        app = VoiceTyper()
+        print("[main] entering rumps run() — メニューバーに出るはず", flush=True)
+        app.run()
+    except Exception:
+        import traceback
+        traceback.print_exc()

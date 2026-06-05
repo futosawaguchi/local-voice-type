@@ -226,3 +226,6 @@ docs/
 # カスタム辞書・置換マップ（個人の固有名詞・専門用語を含むため非公開）
 dictionary.txt
 replacements.txt
+
+# ビルド生成物（絶対パスを埋め込むため非公開。build_app.sh で再生成可能）
+LocalVoiceType.app/
