@@ -57,6 +57,33 @@ def build_prompt():
 
 INITIAL_PROMPT = build_prompt()
 
+# 置換マップ: replacements.txt（「誤変換=>正しい表記」を1行ずつ、#始まりはコメント）。
+# 文字起こし後に確定置換する。人名など「読みは同じだが表記を固定したい」語に有効。
+# 個人の語彙を含むためgit管理外（.gitignore）。1発話ごとに読み直すので編集は即反映。
+REPLACEMENTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "replacements.txt")
+
+
+def load_replacements():
+    """replacements.txt から (誤変換, 正しい表記) のペアを読み込む。"""
+    if not os.path.exists(REPLACEMENTS_FILE):
+        return []
+    pairs = []
+    with open(REPLACEMENTS_FILE, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or "=>" not in line:
+                continue
+            wrong, correct = line.split("=>", 1)
+            pairs.append((wrong.strip(), correct.strip()))
+    return pairs
+
+
+def apply_replacements(text):
+    """文字起こし結果に置換マップを適用する。"""
+    for wrong, correct in load_replacements():
+        text = text.replace(wrong, correct)
+    return text
+
 # メニューバー表示
 ICON_IDLE = "🎤"
 ICON_RECORDING = "🔴"
@@ -148,7 +175,7 @@ class VoiceTyper(rumps.App):
                 audio, path_or_hf_repo=MODEL, language=LANGUAGE,
                 initial_prompt=INITIAL_PROMPT,
             )
-            text = result["text"].strip()
+            text = apply_replacements(result["text"].strip())
             if text:
                 self._insert_text(text)
         except Exception as e:
