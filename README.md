@@ -9,7 +9,7 @@ macOS 上で動く、**完全ローカル**の音声入力ツール。
 
 ## 特徴
 
-- **押している間だけ録音**（右Option）→ 離すと即文字起こし＆挿入
+- **押している間だけ録音**（右Shift）→ 離すと即文字起こし＆挿入
 - **完全ローカル**（mlx-whisper / Apple Silicon の GPU・Neural Engine を活用）
 - **高速**（large-v3-turbo モデル）
 - 日本語の**句読点・漢字変換**に対応、フィラー（「えー」「あの」）も自動で落ちやすい
@@ -65,7 +65,7 @@ venv/bin/python local_voice_type.py
 ```
 
 1. テキストフィールドにカーソルを置く
-2. **右Option を押しながら**話す（録音開始の音が鳴ります）
+2. **右Shift を押しながら**話す（録音開始の音が鳴ります）
 3. **離す** → 文字起こしされ、挿入されます（完了の音が鳴ります）
 
 ---
@@ -96,7 +96,7 @@ open LocalVoiceType.app # 起動
 
 | 定数 | 既定値 | 説明 |
 |---|---|---|
-| `TRIGGER_KEY` | `Key.alt_r` | トリガーキー（右Option） |
+| `TRIGGER_KEY` | `Key.shift_r` | トリガーキー（右Shift）。例: 右Option は `Key.alt_r`、F5 は `Key.f5` |
 | `MODEL` | `mlx-community/whisper-large-v3-turbo` | Whisper モデル。精度重視なら `whisper-large-v3` に |
 | `LANGUAGE` | `ja` | 認識言語 |
 | `MIN_DURATION` | `0.3` | これより短い録音は無視（タップ誤爆対策・秒） |

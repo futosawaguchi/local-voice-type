@@ -1,6 +1,6 @@
 """local-voice-type — macOSで動く完全ローカルの音声入力ツール。
 
-右Optionキーを押している間だけ録音し、離すとmlx-whisperで文字起こしして
+右Shiftキーを押している間だけ録音し、離すとmlx-whisperで文字起こしして
 最前面のテキストフィールドに挿入する。メニューバーに常駐する。
 
 権限（システム設定 → プライバシーとセキュリティ）が必要：
@@ -22,11 +22,12 @@ from pynput import keyboard
 import mlx_whisper
 
 # ===== 設定（ここを変えれば挙動を変更できる / ADR-003, ADR-007）=====
-TRIGGER_KEY = keyboard.Key.alt_r      # 右Option。押している間だけ録音
+TRIGGER_KEY = keyboard.Key.shift_r    # 右Shift。押している間だけ録音
 MODEL = "mlx-community/whisper-large-v3-turbo"
 LANGUAGE = "ja"
 SAMPLE_RATE = 16000                   # Whisperが前提とする16kHz
 MIN_DURATION = 0.3                    # これより短い録音はタップ誤爆として無視（秒）
+SILENCE_PEAK = 0.01                   # 最大音量がこれ未満なら無音とみなし文字起こしをスキップ（幻聴対策）
 TRAILING_SILENCE = 0.5                # 末尾に足す無音（秒）。文末の句読点を確定させやすくする
 
 # 句読点を付けさせるためのヒント文体（Whisperは直前の文体に倣う）。
@@ -171,6 +172,9 @@ class VoiceTyper(rumps.App):
         print(f"[rec] {len(audio) / SAMPLE_RATE:.1f}s peak={peak:.4f}", flush=True)
         if len(audio) / SAMPLE_RATE < MIN_DURATION:
             self.title = ICON_IDLE   # タップ誤爆は無視
+            return
+        if peak < SILENCE_PEAK:
+            self.title = ICON_IDLE   # ほぼ無音は幻聴防止のためスキップ
             return
 
         # 文字起こし〜挿入は重いのでワーカースレッドへ（メニューバーを固めない）
